@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { sendToAgent } from '@/lib/n8n'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -126,7 +127,64 @@ export default function ChatPage() {
                       : 'bg-secondary/50 text-foreground/90 border border-gold/5 rounded-bl-md'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === 'assistant' ? (
+                    <div className="chat-markdown">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => (
+                            <div className="overflow-x-auto my-2 rounded-lg border border-gold/10">
+                              <table className="w-full text-xs">{children}</table>
+                            </div>
+                          ),
+                          thead: ({ children }) => (
+                            <thead className="bg-gold/5 border-b border-gold/10">{children}</thead>
+                          ),
+                          th: ({ children }) => (
+                            <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-gold font-medium whitespace-nowrap">
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children }) => (
+                            <td className="px-3 py-2 text-foreground/70 border-b border-gold/5 whitespace-nowrap max-w-[200px] truncate">
+                              {children}
+                            </td>
+                          ),
+                          tr: ({ children }) => (
+                            <tr className="hover:bg-gold/5 transition-colors">{children}</tr>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="text-gold font-semibold">{children}</strong>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-sm font-medium text-foreground mt-3 mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+                              {children}
+                            </h3>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-base font-medium text-foreground mt-3 mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+                              {children}
+                            </h2>
+                          ),
+                          p: ({ children }) => (
+                            <p className="mb-2 last:mb-0">{children}</p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>
+                          ),
+                          code: ({ children }) => (
+                            <code className="bg-gold/10 text-gold px-1.5 py-0.5 rounded text-xs">{children}</code>
+                          ),
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
                   <p className="text-[10px] text-muted-foreground/40 mt-1.5">
                     {msg.timestamp.toLocaleTimeString('en-GB', {
                       hour: '2-digit',
