@@ -43,6 +43,15 @@ export async function generateLetter(payload: {
     throw new Error(`Letter generation failed: ${res.status}`)
   }
 
-  const data = await res.json()
-  return data.output || data.message || data.text || JSON.stringify(data)
+  const text = await res.text()
+  if (!text) {
+    return 'Letter generation request sent successfully. The AI agent is processing it.'
+  }
+
+  try {
+    const data = JSON.parse(text)
+    return data.output || data.message || data.text || JSON.stringify(data)
+  } catch {
+    return text
+  }
 }
