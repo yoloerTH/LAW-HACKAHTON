@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { generateLetter } from '@/lib/n8n'
@@ -21,6 +21,8 @@ import {
   Check,
   Database,
   ExternalLink,
+  Send,
+  ChevronDown,
 } from 'lucide-react'
 
 const steps = [
@@ -37,15 +39,28 @@ const matterTypes = [
   { value: 'advisory', label: 'Advisory' },
 ]
 
+type ExistingClient = { id: string; name: string; email: string; address: string; contact_person: string; country: string }
+type ExistingMatter = { id: string; title: string; type: string; description: string; jurisdiction: string; governing_law: string; client_id: string }
+
 export default function NewLetterPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
   const [letterId, setLetterId] = useState<string | null>(null)
   const [googleDocUrl, setGoogleDocUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('')
+  const [done, setDone] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  // Existing clients/matters from Supabase
+  const [existingClients, setExistingClients] = useState<ExistingClient[]>([])
+  const [existingMatters, setExistingMatters] = useState<ExistingMatter[]>([])
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null)
+  const [useExistingClient, setUseExistingClient] = useState(false)
+  const [useExistingMatter, setUseExistingMatter] = useState(false)
 
   const [form, setForm] = useState({
     clientName: '',
@@ -71,8 +86,91 @@ export default function NewLetterPage() {
     specialTerms: '',
   })
 
+  // Fetch existing clients on mount
+  useEffect(() => {
+    async function fetchClients() {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, name, email, address, contact_person, country')
+        .order('name')
+      if (data) setExistingClients(data)
+    }
+    fetchClients()
+  }, [])
+
+  // Fetch matters when a client is selected
+  useEffect(() => {
+    async function fetchMatters() {
+      if (!selectedClientId) {
+        setExistingMatters([])
+        return
+      }
+      const { data } = await supabase
+        .from('matters')
+        .select('id, title, type, description, jurisdiction, governing_law, client_id')
+        .eq('client_id', selectedClientId)
+        .order('created_at', { ascending: false })
+      if (data) setExistingMatters(data)
+    }
+    fetchMatters()
+  }, [selectedClientId])
+
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function selectExistingClient(clientId: string) {
+    const client = existingClients.find((c) => c.id === clientId)
+    if (!client) return
+    setSelectedClientId(clientId)
+    setForm((prev) => ({
+      ...prev,
+      clientName: client.name || '',
+      clientEmail: client.email || '',
+      clientAddress: client.address || '',
+      contactPerson: client.contact_person || '',
+      country: client.country || 'Greece',
+    }))
+  }
+
+  function selectExistingMatter(matterId: string) {
+    const matter = existingMatters.find((m) => m.id === matterId)
+    if (!matter) return
+    setSelectedMatterId(matterId)
+    setForm((prev) => ({
+      ...prev,
+      matterTitle: matter.title || '',
+      matterType: matter.type || 'litigation',
+      matterDescription: matter.description || '',
+      jurisdiction: matter.jurisdiction || 'Athens, Greece',
+      governingLaw: matter.governing_law || 'Greek Law',
+    }))
+  }
+
+  async function handleSendEmail() {
+    if (!letterId) return
+    setSending(true)
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          letterId,
+          recipientEmail: form.clientEmail,
+          clientName: form.clientName,
+          contactPerson: form.contactPerson,
+          matterTitle: form.matterTitle,
+          googleDocId: googleDocUrl ? googleDocUrl.split('/d/')[1]?.split('/')[0] : '',
+          googleDocUrl: googleDocUrl || '',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to send email')
+      setSent(true)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to send email. Please try again.')
+    }
+    setSending(false)
   }
 
   async function handleGenerate() {
@@ -81,60 +179,79 @@ export default function NewLetterPage() {
     setStatus('Saving client to database...')
 
     try {
-      // Step 1: Create or find client in Supabase
-      const { data: existingClients } = await supabase
-        .from('clients')
-        .select('id')
-        .ilike('name', form.clientName)
-        .limit(1)
-
       let clientId: string
 
-      if (existingClients && existingClients.length > 0) {
-        clientId = existingClients[0].id
-        // Update existing client with latest info
+      if (useExistingClient && selectedClientId) {
+        clientId = selectedClientId
+        // Update existing client with any changed info
         await supabase.from('clients').update({
           email: form.clientEmail || undefined,
           address: form.clientAddress || undefined,
           contact_person: form.contactPerson || undefined,
           country: form.country,
         }).eq('id', clientId)
-        setStatus('Client found, updating...')
+        setStatus('Using existing client...')
       } else {
-        const { data: newClient, error: clientError } = await supabase
+        // Check if client exists by name
+        const { data: foundClients } = await supabase
           .from('clients')
-          .insert({
-            name: form.clientName,
-            email: form.clientEmail,
-            address: form.clientAddress,
-            contact_person: form.contactPerson,
+          .select('id')
+          .ilike('name', form.clientName)
+          .limit(1)
+
+        if (foundClients && foundClients.length > 0) {
+          clientId = foundClients[0].id
+          await supabase.from('clients').update({
+            email: form.clientEmail || undefined,
+            address: form.clientAddress || undefined,
+            contact_person: form.contactPerson || undefined,
             country: form.country,
+          }).eq('id', clientId)
+          setStatus('Client found, updating...')
+        } else {
+          const { data: newClient, error: clientError } = await supabase
+            .from('clients')
+            .insert({
+              name: form.clientName,
+              email: form.clientEmail,
+              address: form.clientAddress,
+              contact_person: form.contactPerson,
+              country: form.country,
+            })
+            .select('id')
+            .single()
+
+          if (clientError) throw clientError
+          clientId = newClient.id
+          setStatus('Client created.')
+        }
+      }
+
+      // Step 2: Matter
+      let matterId: string
+
+      if (useExistingMatter && selectedMatterId) {
+        matterId = selectedMatterId
+        setStatus('Using existing matter...')
+      } else {
+        setStatus('Saving matter to database...')
+        const { data: newMatter, error: matterError } = await supabase
+          .from('matters')
+          .insert({
+            client_id: clientId,
+            title: form.matterTitle,
+            type: form.matterType,
+            description: form.matterDescription,
+            jurisdiction: form.jurisdiction,
+            governing_law: form.governingLaw,
           })
           .select('id')
           .single()
 
-        if (clientError) throw clientError
-        clientId = newClient.id
-        setStatus('Client created.')
+        if (matterError) throw matterError
+        matterId = newMatter.id
+        setStatus('Matter created.')
       }
-
-      // Step 2: Create matter
-      setStatus('Saving matter to database...')
-      const { data: newMatter, error: matterError } = await supabase
-        .from('matters')
-        .insert({
-          client_id: clientId,
-          title: form.matterTitle,
-          type: form.matterType,
-          description: form.matterDescription,
-          jurisdiction: form.jurisdiction,
-          governing_law: form.governingLaw,
-        })
-        .select('id')
-        .single()
-
-      if (matterError) throw matterError
-      setStatus('Matter created.')
 
       // Step 3: Build fee structure
       const feeStructure =
@@ -150,13 +267,13 @@ export default function NewLetterPage() {
             }
           : { fixed_fee: Number(form.fixedFee.replace(/,/g, '')) }
 
-      // Step 4: Create engagement letter (draft, no content yet)
+      // Step 4: Create engagement letter draft
       setStatus('Creating engagement letter draft...')
       const { data: newLetter, error: letterError } = await supabase
         .from('engagement_letters')
         .insert({
           client_id: clientId,
-          matter_id: newMatter.id,
+          matter_id: matterId,
           status: 'draft',
           fee_structure: feeStructure,
           liability_cap: form.liabilityCap ? Number(form.liabilityCap.replace(/,/g, '')) : null,
@@ -179,7 +296,7 @@ export default function NewLetterPage() {
       setStatus('Data saved. Generating letter with AI...')
 
       // Step 6: Call n8n to generate the letter content
-      const response = await generateLetter({
+      await generateLetter({
         letterId: newLetter.id,
         clientName: form.clientName,
         clientEmail: form.clientEmail,
@@ -197,10 +314,10 @@ export default function NewLetterPage() {
         specialTerms: form.specialTerms,
       })
 
-      setResult(response)
+      setDone(true)
       setStatus('Letter generated! Checking for Google Doc...')
 
-      // Poll Supabase for the Google Doc ID (n8n saves it to pdf_url)
+      // Poll Supabase for the Google Doc ID
       let attempts = 0
       const poll = setInterval(async () => {
         attempts++
@@ -221,8 +338,7 @@ export default function NewLetterPage() {
       }, 2000)
     } catch (err) {
       console.error(err)
-      setResult('Error: ' + (err instanceof Error ? err.message : 'Something went wrong'))
-      setStatus('Error occurred')
+      setStatus('Error: ' + (err instanceof Error ? err.message : 'Something went wrong'))
     }
     setGenerating(false)
   }
@@ -285,6 +401,58 @@ export default function NewLetterPage() {
           {/* Step 0: Client */}
           {step === 0 && (
             <div className="space-y-4 animate-fade-in-up" style={{ opacity: 0, animationDelay: '0s', animationFillMode: 'forwards' }}>
+              {/* Toggle: New vs Existing Client */}
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => {
+                    setUseExistingClient(false)
+                    setSelectedClientId(null)
+                    setForm((prev) => ({ ...prev, clientName: '', clientEmail: '', clientAddress: '', contactPerson: '', country: 'Greece' }))
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                    !useExistingClient
+                      ? 'bg-gold/10 text-gold border-gold/20'
+                      : 'border-gold/8 text-muted-foreground hover:border-gold/20'
+                  }`}
+                >
+                  + New Client
+                </button>
+                <button
+                  onClick={() => setUseExistingClient(true)}
+                  className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                    useExistingClient
+                      ? 'bg-gold/10 text-gold border-gold/20'
+                      : 'border-gold/8 text-muted-foreground hover:border-gold/20'
+                  }`}
+                >
+                  Existing Client
+                </button>
+              </div>
+
+              {/* Existing Client Dropdown */}
+              {useExistingClient && (
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Select Client
+                  </Label>
+                  <div className="relative">
+                    <select
+                      value={selectedClientId || ''}
+                      onChange={(e) => selectExistingClient(e.target.value)}
+                      className="w-full appearance-none bg-background/50 border border-gold/10 rounded-lg px-3 py-2.5 text-sm text-foreground focus:border-gold/30 focus:outline-none cursor-pointer"
+                    >
+                      <option value="">Choose a client...</option>
+                      {existingClients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} — {c.email}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -350,6 +518,61 @@ export default function NewLetterPage() {
           {/* Step 1: Matter */}
           {step === 1 && (
             <div className="space-y-4 animate-fade-in-up" style={{ opacity: 0, animationDelay: '0s', animationFillMode: 'forwards' }}>
+              {/* Toggle: New vs Existing Matter */}
+              {selectedClientId && existingMatters.length > 0 && (
+                <>
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      onClick={() => {
+                        setUseExistingMatter(false)
+                        setSelectedMatterId(null)
+                        setForm((prev) => ({ ...prev, matterTitle: '', matterDescription: '', matterType: 'litigation', jurisdiction: 'Athens, Greece', governingLaw: 'Greek Law' }))
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                        !useExistingMatter
+                          ? 'bg-gold/10 text-gold border-gold/20'
+                          : 'border-gold/8 text-muted-foreground hover:border-gold/20'
+                      }`}
+                    >
+                      + New Matter
+                    </button>
+                    <button
+                      onClick={() => setUseExistingMatter(true)}
+                      className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                        useExistingMatter
+                          ? 'bg-gold/10 text-gold border-gold/20'
+                          : 'border-gold/8 text-muted-foreground hover:border-gold/20'
+                      }`}
+                    >
+                      Existing Matter
+                    </button>
+                  </div>
+
+                  {useExistingMatter && (
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                        Select Matter
+                      </Label>
+                      <div className="relative">
+                        <select
+                          value={selectedMatterId || ''}
+                          onChange={(e) => selectExistingMatter(e.target.value)}
+                          className="w-full appearance-none bg-background/50 border border-gold/10 rounded-lg px-3 py-2.5 text-sm text-foreground focus:border-gold/30 focus:outline-none cursor-pointer"
+                        >
+                          <option value="">Choose a matter...</option>
+                          {existingMatters.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.title} — {m.type}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground">
                   Matter Title *
@@ -580,7 +803,7 @@ export default function NewLetterPage() {
                 </div>
               )}
 
-              {!result && !generating && (
+              {!done && !generating && (
                 <Button
                   onClick={handleGenerate}
                   disabled={generating || !form.clientName || !form.matterTitle}
@@ -591,18 +814,15 @@ export default function NewLetterPage() {
                 </Button>
               )}
 
-              {result && !generating && (
+              {done && !generating && (
                 <div className="space-y-4">
                   <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-emerald-400" />
                       <span className="text-sm text-emerald-400 font-medium">
                         Letter Generated & Saved
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {result}
-                    </p>
                   </div>
 
                   {googleDocUrl ? (
@@ -619,6 +839,33 @@ export default function NewLetterPage() {
                     <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-gold/10 bg-gold/[0.03]">
                       <Loader2 className="w-4 h-4 text-gold animate-spin" />
                       <span className="text-sm text-muted-foreground">Waiting for Google Doc...</span>
+                    </div>
+                  )}
+
+                  {/* Send Email Button */}
+                  {googleDocUrl && !sent && (
+                    <Button
+                      onClick={handleSendEmail}
+                      disabled={sending || !form.clientEmail}
+                      className="w-full bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 h-12"
+                    >
+                      {sending ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      {sending ? 'Sending...' : `Send to ${form.clientEmail}`}
+                    </Button>
+                  )}
+
+                  {sent && (
+                    <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        <span className="text-sm text-emerald-400 font-medium">
+                          Email sent to {form.clientEmail}
+                        </span>
+                      </div>
                     </div>
                   )}
 
@@ -647,7 +894,7 @@ export default function NewLetterPage() {
           )}
 
           {/* Navigation */}
-          {!result && !generating && (
+          {!done && !generating && (
             <div className="flex justify-between mt-8 pt-4 border-t border-gold/8">
               <Button
                 variant="ghost"
