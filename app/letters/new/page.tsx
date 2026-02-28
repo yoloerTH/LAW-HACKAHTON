@@ -174,6 +174,7 @@ export default function NewLetterPage() {
   }
 
   async function handleGenerate() {
+    console.log('MATTER TYPE BEING SAVED:', form.matterType)
     setGenerating(true)
     setSaving(true)
     setStatus('Saving client to database...')
