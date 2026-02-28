@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { sendToAgent } from '@/lib/n8n'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase'
+import { generateLetter } from '@/lib/n8n'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,6 +19,7 @@ import {
   Loader2,
   Sparkles,
   Check,
+  Database,
 } from 'lucide-react'
 
 const steps = [
@@ -38,22 +40,22 @@ export default function NewLetterPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [generating, setGenerating] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+  const [letterId, setLetterId] = useState<string | null>(null)
+  const [status, setStatus] = useState<string>('')
 
   const [form, setForm] = useState({
-    // Client
     clientName: '',
     clientEmail: '',
     clientAddress: '',
     contactPerson: '',
     country: 'Greece',
-    // Matter
     matterTitle: '',
     matterType: 'litigation',
     matterDescription: '',
     jurisdiction: 'Athens, Greece',
     governingLaw: 'Greek Law',
-    // Fees
     feeType: 'hourly',
     managingPartner: '554',
     seniorPartner: '492',
@@ -64,7 +66,6 @@ export default function NewLetterPage() {
     trainee: '98',
     fixedFee: '',
     liabilityCap: '',
-    // Extra
     specialTerms: '',
   })
 
@@ -74,24 +75,132 @@ export default function NewLetterPage() {
 
   async function handleGenerate() {
     setGenerating(true)
+    setSaving(true)
+    setStatus('Saving client to database...')
+
     try {
-      const feeInfo =
+      // Step 1: Create or find client in Supabase
+      const { data: existingClients } = await supabase
+        .from('clients')
+        .select('id')
+        .ilike('name', form.clientName)
+        .limit(1)
+
+      let clientId: string
+
+      if (existingClients && existingClients.length > 0) {
+        clientId = existingClients[0].id
+        // Update existing client with latest info
+        await supabase.from('clients').update({
+          email: form.clientEmail || undefined,
+          address: form.clientAddress || undefined,
+          contact_person: form.contactPerson || undefined,
+          country: form.country,
+        }).eq('id', clientId)
+        setStatus('Client found, updating...')
+      } else {
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert({
+            name: form.clientName,
+            email: form.clientEmail,
+            address: form.clientAddress,
+            contact_person: form.contactPerson,
+            country: form.country,
+          })
+          .select('id')
+          .single()
+
+        if (clientError) throw clientError
+        clientId = newClient.id
+        setStatus('Client created.')
+      }
+
+      // Step 2: Create matter
+      setStatus('Saving matter to database...')
+      const { data: newMatter, error: matterError } = await supabase
+        .from('matters')
+        .insert({
+          client_id: clientId,
+          title: form.matterTitle,
+          type: form.matterType,
+          description: form.matterDescription,
+          jurisdiction: form.jurisdiction,
+          governing_law: form.governingLaw,
+        })
+        .select('id')
+        .single()
+
+      if (matterError) throw matterError
+      setStatus('Matter created.')
+
+      // Step 3: Build fee structure
+      const feeStructure =
         form.feeType === 'hourly'
-          ? `Hourly rates: Managing Partner €${form.managingPartner}, Senior Partner €${form.seniorPartner}, Partner €${form.partner}, Senior Associate €${form.seniorAssociate}, Associate €${form.associate}, Junior Associate €${form.juniorAssociate}, Trainee €${form.trainee}`
-          : `Fixed fee: €${form.fixedFee}`
+          ? {
+              managing_partner: Number(form.managingPartner),
+              senior_partner: Number(form.seniorPartner),
+              partner: Number(form.partner),
+              senior_associate: Number(form.seniorAssociate),
+              associate: Number(form.associate),
+              junior_associate: Number(form.juniorAssociate),
+              trainee: Number(form.trainee),
+            }
+          : { fixed_fee: Number(form.fixedFee.replace(/,/g, '')) }
 
-      const message = `Create a new engagement letter with the following details:
-Client: ${form.clientName}, email: ${form.clientEmail}, address: ${form.clientAddress}, contact person: ${form.contactPerson}, country: ${form.country}.
-Matter: ${form.matterTitle}, type: ${form.matterType}, description: ${form.matterDescription}, jurisdiction: ${form.jurisdiction}, governing law: ${form.governingLaw}.
-Fee structure: ${feeInfo}.
-${form.liabilityCap ? `Liability cap: €${form.liabilityCap}.` : ''}
-${form.specialTerms ? `Special terms: ${form.specialTerms}` : ''}
-Please create the client, matter, and engagement letter in the database and generate the full letter content.`
+      // Step 4: Create engagement letter (draft, no content yet)
+      setStatus('Creating engagement letter draft...')
+      const { data: newLetter, error: letterError } = await supabase
+        .from('engagement_letters')
+        .insert({
+          client_id: clientId,
+          matter_id: newMatter.id,
+          status: 'draft',
+          fee_structure: feeStructure,
+          liability_cap: form.liabilityCap ? Number(form.liabilityCap.replace(/,/g, '')) : null,
+          recipient_email: form.clientEmail,
+        })
+        .select('id')
+        .single()
 
-      const response = await sendToAgent(message)
+      if (letterError) throw letterError
+      setLetterId(newLetter.id)
+
+      // Step 5: Create tracking event
+      await supabase.from('tracking_events').insert({
+        letter_id: newLetter.id,
+        event_type: 'created',
+        metadata: { source: 'web_form' },
+      })
+
+      setSaving(false)
+      setStatus('Data saved. Generating letter with AI...')
+
+      // Step 6: Call n8n to generate the letter content
+      const response = await generateLetter({
+        letterId: newLetter.id,
+        clientName: form.clientName,
+        clientEmail: form.clientEmail,
+        clientAddress: form.clientAddress,
+        contactPerson: form.contactPerson,
+        country: form.country,
+        matterTitle: form.matterTitle,
+        matterType: form.matterType,
+        matterDescription: form.matterDescription,
+        jurisdiction: form.jurisdiction,
+        governingLaw: form.governingLaw,
+        feeStructure,
+        feeType: form.feeType,
+        liabilityCap: form.liabilityCap,
+        specialTerms: form.specialTerms,
+      })
+
       setResult(response)
+      setStatus('Letter generated successfully!')
     } catch (err) {
-      setResult('Error generating letter. Please try again.')
+      console.error(err)
+      setResult('Error: ' + (err instanceof Error ? err.message : 'Something went wrong'))
+      setStatus('Error occurred')
     }
     setGenerating(false)
   }
@@ -125,7 +234,7 @@ Please create the client, matter, and engagement letter in the database and gene
         {steps.map((s, i) => (
           <div key={s.label} className="flex items-center flex-1">
             <button
-              onClick={() => i <= step && setStep(i)}
+              onClick={() => i <= step && !generating && setStep(i)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all w-full ${
                 i === step
                   ? 'bg-gold/10 text-gold border border-gold/20'
@@ -417,50 +526,88 @@ Please create the client, matter, and engagement letter in the database and gene
                       {form.feeType === 'hourly' ? 'Hourly rates' : `Fixed €${form.fixedFee}`}
                     </span>
                   </div>
+                  {form.liabilityCap && (
+                    <div>
+                      <span className="text-muted-foreground">Liability Cap:</span>{' '}
+                      <span>€{form.liabilityCap}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {!result ? (
+              {/* Progress indicator during generation */}
+              {generating && (
+                <div className="p-4 rounded-lg border border-gold/15 bg-gold/[0.03] space-y-3">
+                  <div className="flex items-center gap-3">
+                    {saving ? (
+                      <Database className="w-4 h-4 text-gold animate-pulse" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-gold animate-pulse" />
+                    )}
+                    <span className="text-sm text-gold">{status}</span>
+                  </div>
+                  <div className="h-1 bg-gold/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gold/40 rounded-full transition-all duration-1000"
+                      style={{
+                        width: saving ? '30%' : '70%',
+                        animation: 'pulse 2s ease-in-out infinite',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!result && !generating && (
                 <Button
                   onClick={handleGenerate}
-                  disabled={generating || !form.clientName || !form.matterTitle}
+                  disabled={generating || !form.clientName || !form.matterTitle || !form.clientEmail}
                   className="w-full bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 h-12"
                 >
-                  {generating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Generating with AI...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Engagement Letter
-                    </>
-                  )}
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Save & Generate Engagement Letter
                 </Button>
-              ) : (
+              )}
+
+              {result && !generating && (
                 <div className="space-y-4">
                   <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
                     <div className="flex items-center gap-2 mb-2">
                       <Check className="w-4 h-4 text-emerald-400" />
-                      <span className="text-sm text-emerald-400 font-medium">Letter Generated</span>
+                      <span className="text-sm text-emerald-400 font-medium">
+                        Letter Generated & Saved
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{result}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {result}
+                    </p>
                   </div>
-                  <Button
-                    onClick={() => router.push('/letters')}
-                    className="w-full bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20"
-                  >
-                    View All Letters
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <div className="flex gap-3">
+                    {letterId && (
+                      <Button
+                        onClick={() => router.push(`/letters/${letterId}`)}
+                        className="flex-1 bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Letter
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => router.push('/letters')}
+                      variant="outline"
+                      className="flex-1 border-gold/10 text-muted-foreground hover:text-foreground"
+                    >
+                      All Letters
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
           {/* Navigation */}
-          {!result && (
+          {!result && !generating && (
             <div className="flex justify-between mt-8 pt-4 border-t border-gold/8">
               <Button
                 variant="ghost"
