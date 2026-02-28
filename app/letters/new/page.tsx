@@ -561,7 +561,7 @@ export default function NewLetterPage() {
               {!result && !generating && (
                 <Button
                   onClick={handleGenerate}
-                  disabled={generating || !form.clientName || !form.matterTitle || !form.clientEmail}
+                  disabled={generating || !form.clientName || !form.matterTitle}
                   className="w-full bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 h-12"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />

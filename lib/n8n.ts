@@ -33,7 +33,7 @@ export async function generateLetter(payload: {
   liabilityCap: string
   specialTerms: string
 }): Promise<string> {
-  const res = await fetch(N8N_LETTER_GENERATE_URL, {
+  const res = await fetch('/api/generate-letter', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
