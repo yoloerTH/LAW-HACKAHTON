@@ -10,6 +10,7 @@ import {
   BarChart3,
   Plus,
   MessageSquare,
+  Mic,
   Scale,
 } from 'lucide-react'
 
@@ -20,6 +21,7 @@ const nav = [
   { label: 'Clients', href: '/clients', icon: Users },
   { label: 'Analytics', href: '/analytics', icon: BarChart3 },
   { label: 'AI Chat', href: '/chat', icon: MessageSquare },
+  { label: 'Voice Agent', href: '/voice', icon: Mic },
 ]
 
 export function Sidebar() {
