@@ -20,6 +20,7 @@ import {
   Sparkles,
   Check,
   Database,
+  ExternalLink,
 } from 'lucide-react'
 
 const steps = [
@@ -43,6 +44,7 @@ export default function NewLetterPage() {
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [letterId, setLetterId] = useState<string | null>(null)
+  const [googleDocUrl, setGoogleDocUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('')
 
   const [form, setForm] = useState({
@@ -196,7 +198,27 @@ export default function NewLetterPage() {
       })
 
       setResult(response)
-      setStatus('Letter generated successfully!')
+      setStatus('Letter generated! Checking for Google Doc...')
+
+      // Poll Supabase for the Google Doc ID (n8n saves it to pdf_url)
+      let attempts = 0
+      const poll = setInterval(async () => {
+        attempts++
+        const { data } = await supabase
+          .from('engagement_letters')
+          .select('pdf_url')
+          .eq('id', newLetter.id)
+          .single()
+        if (data?.pdf_url) {
+          clearInterval(poll)
+          setGoogleDocUrl(`https://docs.google.com/document/d/${data.pdf_url}/edit`)
+          setStatus('Google Doc is ready!')
+        }
+        if (attempts >= 30) {
+          clearInterval(poll)
+          setStatus('Letter generated successfully!')
+        }
+      }, 2000)
     } catch (err) {
       console.error(err)
       setResult('Error: ' + (err instanceof Error ? err.message : 'Something went wrong'))
@@ -582,6 +604,24 @@ export default function NewLetterPage() {
                       {result}
                     </p>
                   </div>
+
+                  {googleDocUrl ? (
+                    <a
+                      href={googleDocUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-sm hover:bg-blue-500/20 transition-all"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Your Google Doc is ready — open it
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-gold/10 bg-gold/[0.03]">
+                      <Loader2 className="w-4 h-4 text-gold animate-spin" />
+                      <span className="text-sm text-muted-foreground">Waiting for Google Doc...</span>
+                    </div>
+                  )}
+
                   <div className="flex gap-3">
                     {letterId && (
                       <Button

@@ -18,6 +18,7 @@ import {
   Eye,
   PenLine,
   Loader2,
+  ExternalLink,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -147,6 +148,17 @@ export default function LetterDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {letter.pdf_url && (
+            <a
+              href={`https://docs.google.com/document/d/${letter.pdf_url}/edit`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-3 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-sm hover:bg-blue-500/20 transition-all"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Google Doc
+            </a>
+          )}
           {letter.status === 'draft' && (
             <Button
               variant="outline"
