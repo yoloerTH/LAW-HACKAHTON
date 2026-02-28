@@ -75,15 +75,35 @@ export default function LetterDetailPage() {
     if (!letter) return
     setActionLoading(action)
     try {
-      let message = ''
       if (action === 'send') {
-        message = `Send the engagement letter with id ${letter.id} to ${letter.recipient_email || letter.clients?.email}`
+        // Send the letter via GmailLaw webhook
+        const recipientEmail = letter.recipient_email || letter.clients?.email
+        if (!recipientEmail) {
+          alert('No recipient email found for this letter.')
+          setActionLoading(null)
+          return
+        }
+        const res = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            letterId: letter.id,
+            recipientEmail,
+            clientName: letter.clients?.name || '',
+            contactPerson: letter.clients?.contact_person || '',
+            matterTitle: letter.matters?.title || '',
+            googleDocId: letter.pdf_url || '',
+            googleDocUrl: letter.pdf_url ? `https://docs.google.com/document/d/${letter.pdf_url}/edit` : '',
+          }),
+        })
+        if (!res.ok) throw new Error('Failed to send email')
       } else if (action === 'remind') {
-        message = `Send a reminder for engagement letter with id ${letter.id} to ${letter.recipient_email || letter.clients?.email}`
+        const message = `Send a reminder for engagement letter with id ${letter.id} to ${letter.recipient_email || letter.clients?.email}`
+        await sendToAgent(message)
       } else if (action === 'sign') {
-        message = `Mark engagement letter with id ${letter.id} as signed`
+        const message = `Mark engagement letter with id ${letter.id} as signed`
+        await sendToAgent(message)
       }
-      await sendToAgent(message)
       // Reload data
       const [letterRes, eventsRes] = await Promise.all([
         supabase
