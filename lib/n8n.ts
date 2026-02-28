@@ -1,11 +1,26 @@
 const N8N_WEBHOOK_URL = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL!
 const N8N_LETTER_GENERATE_URL = process.env.NEXT_PUBLIC_N8N_LETTER_GENERATE_URL!
 
+// Generate a persistent session ID per browser tab for conversation memory
+let chatSessionId: string | null = null
+export function getChatSessionId(): string {
+  if (!chatSessionId) {
+    chatSessionId = typeof window !== 'undefined'
+      ? (sessionStorage.getItem('lexflow-chat-session') || (() => {
+          const id = `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+          sessionStorage.setItem('lexflow-chat-session', id)
+          return id
+        })())
+      : `chat-${Date.now()}`
+  }
+  return chatSessionId
+}
+
 export async function sendToAgent(message: string): Promise<string> {
   const res = await fetch(N8N_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, sessionId: getChatSessionId() }),
   })
 
   if (!res.ok) {
