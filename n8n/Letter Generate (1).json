@@ -1,0 +1,937 @@
+{
+  "name": "Letter Generate",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "LetterGenerate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        64
+      ],
+      "id": "470a75d6-b9ae-4d30-bd7a-93338267f699",
+      "name": "Webhook1",
+      "webhookId": "2c35ea29-2f03-42e8-acd2-12acd8d49612"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=CLIENT NAME:  {{ $json.body.clientName }}\nCLIENT EMAIL: {{ $json.body.clientEmail }}\nCLIENT ADRESS:{{ $json.body.clientAddress }}\nCONTACT PERSON: {{ $json.body.contactPerson }}\nCOUNTRY: {{ $json.body.country }}\nMATTER TITLE: {{ $json.body.matterTitle }}\nMATTER DESCRIPTION: {{ $json.body.matterType }}\nJURISDICTION: {{ $json.body.jurisdiction }}\nGOVERNING LAW: {{ $json.body.governingLaw }}\nFEE STRUCTURE:\n- MANAGING PARTNER: {{ $json.body.feeStructure.managing_partner }}\n- SENIOR PARTNER: {{ $json.body.feeStructure.senior_partner }}\n- PARTNER: {{ $json.body.feeStructure.partner }}\n- SENIOR ASSOCIATE: {{ $json.body.feeStructure.senior_associate }}\n- ASSOCIATE: {{ $json.body.feeStructure.associate }}\n- JUNIOR ASSOCIATE: {{ $json.body.feeStructure.junior_associate }}\n- TRAINEE: {{ $json.body.feeStructure.trainee }}\n\nFEE TYPE: {{ $json.body.feeType }}\nLIABILITY CAP: {{ $json.body.liabilityCap }}\nSPECIAL TERMS: {{ $json.body.specialTerms }}\nCURRENT DATE: {{ $now }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an engagement letter generator for a Greek law firm. You receive structured data and produce a complete engagement letter matching the exact format of real Greek law firm letters.\n\nOutput Rules\nReturn ONLY the letter text. No explanations, no markdown, no code blocks.\n\nUse formal British English throughout.\n\nUse today's date.\n\nThe firm name is \"LexFlow Legal Associates\" with address \"45 Vasilissis Sofias Avenue, 10676 Athens, Greece, Tel: +30 210 729 4500\"\n\nEXACT LETTER FORMAT TO FOLLOW\nLexFlow Legal Associates\n45 Vasilissis Sofias Avenue, 10676 Athens, Greece\nTel: +30 210 729 4500\n----------------------------------------------------------------\n[Today's Date]\n\n[clientName]\n[clientAddress]\n[country]\n\nAtt: [contactPerson]\n[clientEmail]\n\nRe: Engagement Letter between \"[clientName]\" and \"LexFlow Legal Associates\"\n\nDear Sirs,\n\nWe appreciate your interest in retaining LexFlow Legal Associates (the \"Firm\") and we confirm that we are pleased to provide legal services to [clientName] (hereinafter the \"Client\" or \"You\") on the contemplated [matterType] matter, as outlined in Section 1 below.\n\nWe outline below the terms of the proposed engagement and the scope of our mandate:\n\nSubject matter - Scope of legal assistance and services\n\n[WRITE THE SCOPE BASED ON matterType AND matterDescription. Follow these patterns:]\n\nFOR LITIGATION:\n\"The Firm provides as of [today's date] legal advice and represents the Client with regard to [describe the legal proceedings based on matterDescription]. In this respect, the Firm shall review and assess the action filed, relevant documentation of the case, plan the case strategy, provide legal advice, draft pleadings and represent the Client in the defence against the claim and in any other related matter as instructed by the Client, including any appeal, if required.\"\n\nFOR REAL ESTATE:\nWrite a detailed description of the property/project from matterDescription, then list numbered services:\n\nAdvising Client on real estate matters.\n\nConducting due diligence on the real property and its titles of ownership in the local land registry and cadastral office.\n\nDrafting legal due diligence report.\n\nProviding strategic legal advice to the Client on investment structuring in Greece.\n\nAssisting the Client in its dealings and agreements with other stakeholders and drafting agreements.\n\nProviding ongoing advice regarding corporate, structural, and ownership issues.\n\nAssisting in drafting and advising in relation to agreements for the promotion, implementation and operation of the Project.\n\nFOR CORPORATE:\nWrite numbered items covering: company formation, corporate governance, shareholder agreements, compliance, regulatory matters, contract drafting and review.\n\nFOR ADVISORY:\nWrite numbered items covering: legal opinions, regulatory advice, contract review, risk assessment, compliance guidance.\n\n[Then always add:]\nIn order to carry out the above we shall retain appropriate and competent fee earners and also service providers, if further salient issues arise which should require additional expert advice, including translators, notaries, tax advisors or financial advisors as the Firm deems appropriate, if the need be, by properly informing the Client. The cost of these fee earners constitutes client disbursement which will be settled by Client.\n\nNo responsibility will be accepted by the Firm for any information contained in any report or opinion prepared by any other person which may be extracted, included or referred to in any document, any opinion or letter that may be provided by the Firm.\n\nUpon Client's instructions given by its approved representatives, we shall also advise on any other matter related to the above and provide assistance in this respect.\n\nFees\n\nOur schedule of fees and invoicing terms are attached in Schedule I.\n\nInternal management of the legal work\n\nIt is our policy to ensure that the legal work, which we will render for you, is performed efficiently, cost effectively and by the lawyer with the most appropriate skills for the particular task. We are interested that, by acting for you, we provide legal advice and assistance to the highest standard of competence and integrity.\n\nConfidentiality\n\nThe Firm is under a professional and legal obligation to keep the affairs of its clients confidential. The Firm adheres to the principles of independence, impartiality and objectivity in all advisory work and has ensured compliance with the general data protection framework including the provisions of the General Data Protection Regulation.\n\nAccordingly, all reports, memos, opinions and recommendations prepared, and all information, data, records, documentation and similar items received from the Client remain confidential and are not to be transmitted to any person or entity other than the Client, and their designated representatives and employees.\n\nFurthermore, LexFlow Legal Associates will maintain the confidentiality of unpublished information in reference to the Client, its activity or legal operations, withholding from any disclosure to unauthorized third parties and taking protective measures of the documents provided by the Client.\n\nThe Client is also kindly required to keep the confidentiality of the actual terms of the parties' collaboration under this Engagement Letter.\n\nStorage of Client and firm documents\n\nIf instructed by the Client, security protocols shall be followed for communications and transmission of confidential documents. Indicatively, (i) the use of MS Teams and (ii) password protection of documents.\n\nLexFlow Legal Associates will retain any documents furnished by you to us in the client file (or files) for the matter. At your request we will return your documents at the conclusion of the matter (or earlier, if appropriate). It should be your concern to inform us which, if any, of the documents furnished by you to us you want returned. LexFlow Legal Associates will return those documents to you promptly after receipt of payment for outstanding fees and charges. LexFlow Legal Associates will keep its file of papers (except for any papers which you ask to be returned to you) and electronic records for at least the period of time required by law after sending the Firm's final bill to you. After that LexFlow Legal Associates will be entitled to destroy them in accordance with the LexFlow Legal Associates' record retention procedures then in effect. LexFlow Legal Associates will not destroy documents you ask us to maintain in safe custody.\n\nKYC Check\n\nIn addition to publicly available corporate information, we may require documentation of the Client, for KYC purposes, as these may become mandatory on us to lawfully engage in providing legal services to any client.\n\nGoverning law\n\nOur engagement will be governed by [governingLaw] and the Greek Lawyers Code. All parties hereto consent to submit any dispute that may arise out of this current agreement to the exclusive jurisdiction of the courts of [jurisdiction].\n\nConflicts\n\nWe confirm that we have not identified conflicts of interest. We shall inform the Client without delay of any future conflict of interest possibly arising and shall proceed with appropriate action to safeguard the Client's interests following proper consultation with the Client.\n\nLimitation of Liability\n\nThe Firm will provide advice in relation to the specific matter. Our aggregate liability, including liability for legal and other fees, costs and disbursements, in respect of any and all claims arising out of or in relation to this mandate is limited to [IF liabilityCap provided: \"the amount of €[liabilityCap]\" ELSE: \"the amount of the fees paid to the Firm under the terms of this Engagement Letter\"].\n\n[IF specialTerms is not empty, add:]\n10. Special Terms\n\n[Insert specialTerms content]\n\nPlease acknowledge receipt and acceptance of the terms and conditions in this engagement letter by signing in the space provided herein below and returning one copy to us.\n\nWe look forward to an efficient cooperation and please revert if you wish to discuss the above.\n\nYours sincerely,\n\nManaging Partner\nLexFlow Legal Associates\n\nWe have read the above and accept the terms and conditions set out therein.\n\nFor and on behalf of [clientName]\n\nName:\nDate:\n\nSchedule I\nLexFlow Legal Associates Fee Schedule ([matterType capitalized])\n\n[IF feeType is \"hourly\":]\nThe fees of the Firm for the provision of legal services shall be based on the hourly rate for the time spent on the Client's matter, as per the below fee schedule.\n\nManaging Partner €[managing_partner]\nSenior Partner €[senior_partner]\nPartner €[partner]\nSenior Associate €[senior_associate]\nAssociate €[associate]\nJunior Associate €[junior_associate]\nTrainee €[trainee]\n\nAll rates are net prices exclusive of VAT. VAT of 24% will be added if the Client is liable for VAT.\n\nThe Firm shall render statements for the work performed, indicating the lawyer working on the matter, the activity, the date of performance and time spent. Work performed is billed in a minimum of six-minute increments.\n\nWe shall form a team with an adequate number of lawyers of various seniority levels who shall be readily available depending on the needs as they arise. However, we shall be engaging actually only the number of lawyers who shall be absolutely necessary to efficiently carry out the mandate.\n\n[IF feeType is \"fixed\":]\nThe fees for this engagement shall be a fixed lump-sum of €[fixed_fee].\n\nDisbursements incurred specifically to enable us to carry out the legal task contemplated herein (being, inter alia, telephone call, photocopying costs, computerized legal research charges, secretarial overtime costs, translations costs, courier and other delivery fees, travel and accommodation costs) shall be charged at cost.\n\nPlease note that invoicing is consistent with detailed billing requirements, as regards itemization of work performed, details of time spent etc. Invoices will be issued to [clientName], [clientAddress] delivered to the e-mail address [clientEmail]. We invoice monthly. We would require payment of our bills within 30 days from the date of issuance of our invoice, without any deduction or withholding on account of taxes or other charges of any nature. Unless a change in the law occurs, you will not be responsible for paying any additional amount on our invoices.\n\nAGREED AND ACCEPTED:\n\n  Client Name:\n  Signature:  \n  Date:  "
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        32,
+        64
+      ],
+      "id": "f8b95849-4a1f-4271-986f-9de04c826ca0",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "grok-4-1-fast-non-reasoning",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatXAiGrok",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        272
+      ],
+      "id": "eb42bea9-699e-4b8e-ad5d-0c76129715ad",
+      "name": "xAI Grok Chat Model3",
+      "credentials": {
+        "xAiApi": {
+          "id": "CaPwINWAtRiz6I8n",
+          "name": "xAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "1BQvodnCPYtVLMAe9J1fY8pwtijIx1K7b",
+        "title": "={{ $('Webhook1').item.json.body.contactPerson }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        384,
+        64
+      ],
+      "id": "f557ae53-1c95-4a79-b30d-28d766588edd",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "3mo3xaftOp3GoFri",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ $('Basic LLM Chain').item.json.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        592,
+        64
+      ],
+      "id": "267de582-93ff-4434-887f-c3a239687ffc",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "3mo3xaftOp3GoFri",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagement_letters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook1').first().json.body.letterId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "pdf_url",
+              "fieldValue": "={{ $json.documentId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        800,
+        64
+      ],
+      "id": "c710b4bc-97ff-4260-9ae8-bd68a549d677",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1008,
+        64
+      ],
+      "id": "7f4f7461-dedb-453a-81ca-07fd79a0b87b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "GmailLaw",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -160,
+        -144
+      ],
+      "id": "1b01d640-2d7c-4363-a98b-7fe9adfda6d2",
+      "name": "Webhook",
+      "webhookId": "2c35ea29-2f03-42e8-acd2-12acd8d49612"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').first().json.body.recipientEmail }}",
+        "subject": "Hello Sintoris Kayliarh",
+        "message": "= Hello, click <a href=\"https://candid-tiramisu-94f8cb.netlify.app/api/track/{{$('Webhook').first().json.body.letterId }}\">here</a> to view your engagement letter.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        -128
+      ],
+      "id": "a99f4d4f-fb8c-47be-8f06-d7fb0df56f07",
+      "name": "Send a message",
+      "webhookId": "2fe04617-b46c-4fc0-b77b-3a827d43587a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jseNrmFTrszU0N3B",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.body.googleDocId }}/permissions?sendNotificationEmail=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"user\",\n  \"role\": \"writer\",\n  \"emailAddress\": \"{{ $json.body.recipientEmail }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        48,
+        -144
+      ],
+      "id": "e601a66b-922d-4a2e-9dcb-e97f6bb467eb",
+      "name": "HTTP Request",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "3mo3xaftOp3GoFri",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagement_letters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').first().json.body.letterId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "sent"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        384,
+        -128
+      ],
+      "id": "99208795-2ca3-4eb5-9f74-d700b8c0cfba",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1BQvodnCPYtVLMAe9J1fY8pwtijIx1K7b",
+          "mode": "list",
+          "cachedResultName": "Hackathon Law",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1BQvodnCPYtVLMAe9J1fY8pwtijIx1K7b"
+        },
+        "event": "fileUpdated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        528
+      ],
+      "id": "97849550-5a78-4cc3-a969-1abeba6976ed",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "bwuUp2IgYYCaRoFP",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        496
+      ],
+      "id": "67e757e9-d5d9-4080-87f6-de2ac94176e7",
+      "name": "Schedule Trigger",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "engagement_letters",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "signed"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        512,
+        496
+      ],
+      "id": "bfead127-1963-451b-ba69-9979b52d745a",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "tracking_events",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "letter_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').first().json.body.letterId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_type",
+              "fieldValue": "sent"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -128
+      ],
+      "id": "40d6d0ab-320e-4209-b230-30d8f02f9a2a",
+      "name": "Update a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ $json.pdf_url }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        864,
+        640
+      ],
+      "id": "353a5c4e-d4e2-4514-b5e0-13101ed9f4fa",
+      "name": "Get a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "3mo3xaftOp3GoFri",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are a document signature detector. Your ONLY job is to check if the client has signed the engagement letter.\n\nAnalyze the document content and check the \"AGREED AND ACCEPTED\" or \"ACCEPTANCE\" section at the END of the document.\n\nCheck if these fields have been filled in by the client:\n\nClient Name / Name\n\nDate\n\nRules:\n\nIf the Client Name field contains an actual human name AND the Date field contains an actual date, respond: YES\n\nIGNORE the Signature field completely — signatures are often images which are not visible in the text. Do not check it.\n\nExamples of FILLED: \"Client Name: Thanos Panagiotakopoulos\", \"Name: Maria Konstantinou\", \"Date: 28/02/2026\", \"Date: February 28, 2026\"\n\nExamples of NOT FILLED: \"Client Name: \", \"Client Name:\", \"Name: [Name]\", \"Date: \", \"Date: ___\"\n\nIgnore the law firm's signature section — only check the CLIENT's section.\n\nThe law firm section is usually already pre-filled. Only the client section matters.\n\nRespond with ONLY one word: YES or NO\nNothing else. No explanation. No punctuation. Just YES or NO."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1072,
+        640
+      ],
+      "id": "3d599a12-98d9-4a60-86a5-283fa36ea95d",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "model": "grok-4-1-fast-reasoning",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatXAiGrok",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        816
+      ],
+      "id": "1f95a56a-9ede-43d8-aa63-5e5b786ab81f",
+      "name": "xAI Grok Chat Model",
+      "credentials": {
+        "xAiApi": {
+          "id": "CaPwINWAtRiz6I8n",
+          "name": "xAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "99f81d68-f2be-4c79-854c-ca48f67ab641",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "YES",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1424,
+        640
+      ],
+      "id": "4c845e65-664c-4a1a-81ed-e956ce0481e7",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "tracking_events",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "letter_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get many rows').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_type",
+              "fieldValue": "signed"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        544
+      ],
+      "id": "eeed7cf2-fe75-49d6-9bd4-e84da75bd63e",
+      "name": "Update a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagement_letters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get many rows').first().json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "signed"
+            },
+            {
+              "fieldId": "signed_at",
+              "fieldValue": "={{$now}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        544
+      ],
+      "id": "57918546-9276-4f88-89da-4c2ada328811",
+      "name": "Update a row4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        992
+      ],
+      "id": "b642dc2f-ff63-499e-b2de-8de9fb0c007b",
+      "name": "Schedule Trigger1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "engagement_letters",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "signed"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "draft"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        496,
+        992
+      ],
+      "id": "cf256cbe-a784-4b57-908d-9d93ca32d181",
+      "name": "Get many rows1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();                                                                             \n  for (const item of $input.all()) {\n    const createdAt = new Date(item.json.created_at);                                                 \n    const hoursDiff = (now - createdAt) / (1000 * 60 * 60); \n    item.json.needsReminder = hoursDiff >= 48 ? 'yes' : 'no';\n    item.json.hoursSinceCreated = Math.round(hoursDiff);\n  }\n  return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        992
+      ],
+      "id": "d98a3bbf-fa43-4fdb-aa9d-9298c1275108",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3bd57f66-b482-492d-8210-0395651708cf",
+              "leftValue": "={{ $json.needsReminder }}",
+              "rightValue": "=no",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        992
+      ],
+      "id": "facf04d1-3e99-4183-baa3-bf763ba9b07c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get many rows1').item.json.recipient_email }}",
+        "subject": "Reminder: Engagement Letter Pending Signature",
+        "message": " <p>Dear Client,</p>    <p>We hope this message finds you well.</p>    <p>We are writing to follow up on the Engagement Letter that was sent to you regarding your matter   with LexFlow Legal Associates. We have not yet received a signed copy.</p>    <p>You can review and sign the engagement letter <a    href=\"https://candid-tiramisu-94f8cb.netlify.app/api/track/{{ $json.id }}\">here</a>.</p>    <p>We would appreciate it if you could review and return the signed letter at your earliest   convenience so that we may proceed with the matter.</p>    <p>Should you have any questions or require any clarification, please do not hesitate to contact   us.</p>    <p>Kind regards,<br>LexFlow Legal Associates</p>   ",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        1088
+      ],
+      "id": "81f20ef2-68a8-4fe1-93cc-f317b083ca27",
+      "name": "Send a message1",
+      "webhookId": "b7d03a4b-5e66-4eba-b5b5-3749b688aa86",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jseNrmFTrszU0N3B",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xAI Grok Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "Update a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xAI Grok Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row3": {
+      "main": [
+        [
+          {
+            "node": "Update a row4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get many rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "d4f83291-4727-44e1-91d3-35d6048bb2c6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3a179d7a4718bb71bf75a59adacdfb17d6ba017981c2fbfd36ef6ededa4f712"
+  },
+  "id": "TTJsNoPdpjEM4hmG5-EvZ",
+  "tags": []
+}

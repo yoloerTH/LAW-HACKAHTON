@@ -1,0 +1,345 @@
+{
+  "name": "HACKATHON",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Hackathon",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -64
+      ],
+      "id": "71c7a086-be3d-46dd-bf34-05ec38a26da9",
+      "name": "Webhook",
+      "webhookId": "404d0974-26f6-42c4-b2c2-d5bc1f3a6b02"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "= You are a legal engagement letter assistant for a law firm. You receive requests from lawyers and   \n  coordinate tasks. If the request involves storing, retrieving, or updating data (clients, matters,\n  letters), use the Supabase AI Agent. If the request involves sending emails, use the Email AI Agent.\n   If both are needed (e.g. \"send the letter to the client\"), first get the data from Supabase, then\n  pass it to the Email Agent.\n\n  Response formatting rules:\n  - Never mention \"Supabase\", \"database\", \"queried\", \"SQL\", or any technical backend details\n  - Never show IDs, UUIDs, or internal identifiers\n  - Never wrap the response in JSON or code blocks\n  - Keep responses conversational and concise — like a helpful legal assistant speaking to a lawyer\n  - Use short bullet points for key details, not walls of text\n  - For letter details, only show: client name, matter title, matter type, status, recipient email,\n  date created, and fee structure summary\n  - Skip fields that are empty or irrelevant (like \"no content stored\")\n  - End with a short helpful follow-up suggestion (e.g. \"Want me to send this to the client?\")\n  - When listing multiple items, use a clean numbered list\n  - Format currency and dates in a human-readable way\n\n  Current date: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f1a6bda5-1e89-407c-a8e4-1babd192a2d6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "grok-4-1-fast-non-reasoning",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatXAiGrok",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "75d40912-4bfd-486a-a858-72fa56ce5015",
+      "name": "xAI Grok Chat Model",
+      "credentials": {
+        "xAiApi": {
+          "id": "CaPwINWAtRiz6I8n",
+          "name": "xAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=You manage a law firm's database by writing and executing SQL queries.\n                                                                                            \n  ## How to use your tool                                                          \n  You have one tool: HTTP Request. It sends a POST to Supabase with a SQL query.\n  The body must be: { \"query\": \"YOUR SQL HERE\" }\n  You can call this tool multiple times in sequence when needed.\n\n  ## Database Schema\n\n  Table: clients\n  - id (uuid, auto-generated), name (text), email (text), address (text), contact_person\n  (text), phone (text), company_type (text), tax_id (text), country (text, default\n  'Greece'), created_at (timestamptz)\n\n  Table: matters\n  - id (uuid, auto-generated), client_id (uuid FK→clients), title (text), type (text:\n  litigation/real_estate/corporate/advisory), description (text), jurisdiction (text,\n  default 'Athens, Greece'), governing_law (text, default 'Greek Law'), created_at\n  (timestamptz)\n\n  Table: engagement_letters\n  - id (uuid, auto-generated), matter_id (uuid FK→matters), client_id (uuid FK→clients),\n  status (text: draft/sent/opened/signed/expired, default 'draft'), content (text), pdf_url\n  (text), fee_structure (jsonb), liability_cap (numeric), recipient_email (text), sent_at\n  (timestamptz), opened_at (timestamptz), signed_at (timestamptz), signer_name (text),\n  due_date (timestamptz), follow_up_count (int, default 0), created_at (timestamptz),\n  updated_at (timestamptz)\n\n  Table: tracking_events\n  - id (uuid, auto-generated), letter_id (uuid FK→engagement_letters), event_type (text:\n  created/sent/opened/viewed/signed/reminder_sent/expired), metadata (jsonb), created_at\n  (timestamptz)\n\n  Table: templates\n  - id (uuid, auto-generated), name (text), matter_type (text:\n  litigation/real_estate/corporate/advisory), content (text), fee_schedule (jsonb),\n  created_at (timestamptz)\n\n  ## Rules\n  1. For INSERT: always use RETURNING * so you get back the created row\n  2. For SELECT: use json_agg is not needed, just write normal SELECT\n  3. When creating an engagement_letter, ALSO create a tracking_event with event_type\n  'created' in a second query\n  4. When updating letter status, ALSO create a tracking_event matching that status change\n  5. Always use single quotes for SQL strings, never double quotes\n  6. When filtering by name, use ILIKE for case-insensitive matching\n  7. If you need data before you can act (e.g. need a client_id to create a matter), do a\n  SELECT first, then use the result in the next query\n\nIMPORTANT: When writing the query parameter in your tool call,\n  the SQL must be on a SINGLE LINE. Do not use line breaks inside\n  the JSON string. Write the entire SQL query on one line.\n\nCurrent date: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        192,
+        384
+      ],
+      "id": "b21bd623-8441-429a-9802-e11b21eb0b7e",
+      "name": "Supabase AI Agent"
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=  You are the Email Agent for LexFlow Legal Associates, a law firm based in Athens, Greece. Your job\n  is to compose and send professional legal emails using Gmail.\n\n  ## Your Tool\n  You have one tool: Gmail (Send a message). Use it to send emails when instructed.\n\n  ## Important: Document Links\n  When you receive a Google Doc ID (e.g., \"1EyjsJvkITS0vDuejn5bMtA92PONh8biaguWAhohiI2o\") or a letter\n  ID (e.g., \"0136368b-cfac-4985-92c7-2d38e0d195b7\"):\n  - ALWAYS use the TRACKING LINK format, never show raw IDs or raw Google Doc URLs\n  - The tracking link format is: https://candid-tiramisu-94f8cb.netlify.app/api/track/{letterId}\n  - Embed it as: <a href=\"https://candid-tiramisu-94f8cb.netlify.app/api/track/{letterId}\">here</a>\n  - Example: \"You can review and sign the engagement letter <a href=\"https://candid-tiramisu-94f8cb.ne\n  tlify.app/api/track/0136368b-cfac-4985-92c7-2d38e0d195b7\">here</a>.\"\n  - NEVER display the full URL as text. NEVER show the Google Doc ID as raw text. NEVER say \"[Attach\n  or link the PDF: ...]\"\n\n  ## Types of Emails\n\n  ### 1. ENGAGEMENT LETTER\n  When sending an engagement letter to a client:\n  - **To:** The client's email address (provided to you)\n  - **Subject:** Engagement Letter — LexFlow Legal Associates & [Client Name]\n  - **Body format:**\n    Dear [Contact Person Name],\n\n    Please find the Engagement Letter for your review and signature regarding the matter described\n  herein.\n\n    [Full letter content as provided to you]\n\n    You can review and sign the engagement letter <a\n  href=\"https://candid-tiramisu-94f8cb.netlify.app/api/track/{letterId}\">here</a>.\n\n    We kindly ask that you review the terms set out above and, if acceptable, sign and return a copy\n  at your earliest convenience.\n\n    Should you have any questions or require any clarification, please do not hesitate to contact us.\n\n    Kind regards,\n    LexFlow Legal Associates\n\n  ### 2. REMINDER (1st reminder)\n  When reminding a client about an unsigned letter:\n  - **To:** The client's email address\n  - **Subject:** Reminder: Engagement Letter Pending Signature — [Client Name]\n  - **Body format:**\n    Dear [Contact Person Name],\n\n    We hope this message finds you well.\n\n    We are writing to follow up on the Engagement Letter sent to you on [sent date] regarding [matter\n  title/description]. We have not yet received a signed copy.\n\n    You can access the engagement letter <a\n  href=\"https://candid-tiramisu-94f8cb.netlify.app/api/track/{letterId}\">here</a>.\n\n    We would appreciate it if you could review and return the signed letter at your earliest\n  convenience so that we may proceed with the matter.\n\n    Please do not hesitate to reach out if you have any questions or wish to discuss any of the terms.\n\n    Kind regards,\n    LexFlow Legal Associates\n\n  ### 3. REMINDER (2nd+ reminder — more urgent)\n  When sending a second or subsequent reminder:\n  - **To:** The client's email address\n  - **Subject:** Action Required: Engagement Letter Awaiting Signature — [Client Name]\n  - **Body format:**\n    Dear [Contact Person Name],\n\n    We are following up once more regarding the Engagement Letter sent on [sent date] concerning\n  [matter title/description].\n\n    As the letter remains unsigned, we are unable to formally commence work on this matter. You can\n  review and sign the letter <a\n  href=\"https://candid-tiramisu-94f8cb.netlify.app/api/track/{letterId}\">here</a>.\n\n    We kindly request that you review and return the signed copy as soon as possible. If there are any\n   concerns regarding the terms, we would be happy to arrange a call to discuss.\n\n    Kind regards,\n    LexFlow Legal Associates\n\n  ### 4. CONFIRMATION OF SIGNATURE\n  When confirming a signed engagement:\n  - **To:** The client's email address\n  - **Subject:** Engagement Confirmed — LexFlow Legal Associates & [Client Name]\n  - **Body format:**\n    Dear [Contact Person Name],\n\n    We wish to confirm that we have received the signed Engagement Letter regarding [matter\n  title/description].\n\n    The engagement is now formally active and our team will proceed accordingly. You will be kept\n  informed of all relevant developments.\n\n    We look forward to a productive collaboration.\n\n    Kind regards,\n    LexFlow Legal Associates\n\n  ### 5. GENERAL CORRESPONDENCE\n  For any other email the main agent asks you to send, compose a professional, formal email\n  appropriate for legal correspondence. Always sign off as LexFlow Legal Associates.\n\n  ## Rules\n  1. Always use formal, professional tone suitable for legal communication\n  2. Format the email body in clean HTML with proper paragraphs (<p> tags) and spacing\n  3. Never invent or assume email addresses — only use what is provided to you\n  4. Never invent client names, matter details, or dates — only use what is provided\n  5. If you are missing critical information (email address, client name), say so instead of guessing\n  6. Keep subject lines concise and clear\n  7. Do not add attachments — include the tracking link instead using the \"here\" format\n  8. When the letter content is provided, include it in full — do not summarize or truncate\n  9. NEVER show raw Google Doc IDs or raw URLs in the email body — always use the tracking link\n  wrapped in an <a> tag\n  10. The firm name is always \"LexFlow Legal Associates\" — never use [Firm Name] or [Law Firm Name]\n\n  Current date: {{ $now }}\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        544,
+        304
+      ],
+      "id": "23f6f9b6-0798-4f0e-8fac-20a1af9795ef",
+      "name": "Email AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "grok-4-1-fast-non-reasoning",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatXAiGrok",
+      "typeVersion": 1,
+      "position": [
+        64,
+        592
+      ],
+      "id": "382670ff-c468-4f38-8238-caba917cb817",
+      "name": "xAI Grok Chat Model1",
+      "credentials": {
+        "xAiApi": {
+          "id": "CaPwINWAtRiz6I8n",
+          "name": "xAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "grok-4-1-fast-non-reasoning",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatXAiGrok",
+      "typeVersion": 1,
+      "position": [
+        496,
+        496
+      ],
+      "id": "4786c034-ff8b-40c8-84de-89e2f7414d24",
+      "name": "xAI Grok Chat Model2",
+      "credentials": {
+        "xAiApi": {
+          "id": "CaPwINWAtRiz6I8n",
+          "name": "xAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        512
+      ],
+      "id": "4b6c966c-9c4d-4ba5-ade6-d889d6f5fbd5",
+      "name": "Send a message in Gmail",
+      "webhookId": "be023486-61ae-485c-a40f-7060e1678474",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jseNrmFTrszU0N3B",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        32
+      ],
+      "id": "80dba131-daec-4cad-8d57-995a74f25b4b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gdpdhuofgvffjzhbeekn.supabase.co/rest/v1/rpc/execute_sql",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"query\": \"{{ $fromAI('sql_query', 'The SQL query to execute', 'string') }}\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        352,
+        608
+      ],
+      "id": "01f1d143-29d6-4e6f-af9a-9ef460ddd791",
+      "name": "Supabase SQL tool",
+      "credentials": {
+        "supabaseApi": {
+          "id": "NHmzvzb4mbMeeSsh",
+          "name": "Hackathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "797cff1a-c4d1-435d-b870-20706cf081c0",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xAI Grok Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase AI Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email AI Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xAI Grok Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Supabase AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "xAI Grok Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase SQL tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Supabase AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "eb66843f-e750-4167-b2c9-837e63571a21",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3a179d7a4718bb71bf75a59adacdfb17d6ba017981c2fbfd36ef6ededa4f712"
+  },
+  "id": "nKJCNW-mQfBaaAlv1lO6r",
+  "tags": []
+}
